@@ -2,7 +2,7 @@ import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import LoginForm from "./LoginForm";
 
-export const metadata = { title: "Admin Login — Liga Stats" };
+export const metadata = { title: "Admin Login — Liga Carolina" };
 
 export default async function LoginPage() {
   const session = await getSession();
@@ -13,7 +13,7 @@ export default async function LoginPage() {
       <div style={{ width: "100%", maxWidth: "420px" }}>
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <h1 className="brand-gradient" style={{ fontSize: "2.5rem", letterSpacing: "4px", marginBottom: "8px" }}>LIGA STATS</h1>
+          <h1 className="brand-gradient" style={{ fontSize: "2.5rem", letterSpacing: "4px", marginBottom: "8px" }}>Liga Carolina</h1>
           <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>Admin Portal &mdash; Restricted Access</p>
         </div>
 

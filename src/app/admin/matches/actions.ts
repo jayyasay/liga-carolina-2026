@@ -4,11 +4,14 @@ import { db } from "@/db";
 import { matches } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 type MatchStatus = "SCHEDULED" | "LIVE" | "COMPLETED" | "CANCELED";
 
 export async function createMatch(formData: FormData) {
   try {
+    await requireAdminSession();
+
     const homeTeamId = formData.get("homeTeamId")?.toString();
     const awayTeamId = formData.get("awayTeamId")?.toString();
     const matchDateStr = formData.get("matchDate")?.toString();
@@ -40,6 +43,8 @@ export async function createMatch(formData: FormData) {
 
 export async function updateMatchScore(id: string, homeScore: number, awayScore: number, status: MatchStatus) {
   try {
+    await requireAdminSession();
+
     await db.update(matches)
       .set({
         homeScore,
@@ -60,6 +65,8 @@ export async function updateMatchScore(id: string, homeScore: number, awayScore:
 
 export async function deleteMatch(id: string) {
   try {
+    await requireAdminSession();
+
     await db.delete(matches).where(eq(matches.id, id));
     revalidatePath("/admin/matches");
     return { success: true };

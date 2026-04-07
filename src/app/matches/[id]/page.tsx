@@ -4,6 +4,7 @@ import { eq, or } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import PublicNav from "@/components/PublicNav";
 import MatchShareButton from "@/components/MatchShareButton";
 import { Trophy, ChevronLeft, Award } from "lucide-react";
 
@@ -47,8 +48,7 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
   const match = results[0];
   if (!match || !match.homeTeamId || !match.awayTeamId) notFound();
 
-  // Always fetch rosters for both teams
-  const roster = await db
+  const rosterQuery = db
     .select({
       id: players.id,
       firstName: players.firstName,
@@ -60,20 +60,30 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
     .from(players)
     .where(or(eq(players.teamId, match.homeTeamId), eq(players.teamId, match.awayTeamId)));
 
-  // Fetch stats if any
-  const stats = await db
-    .select({
-      playerId: playerMatchStats.playerId,
-      teamId: playerMatchStats.teamId,
-      points: playerMatchStats.points,
-      assists: playerMatchStats.assists,
-      steals: playerMatchStats.steals,
-      blocks: playerMatchStats.blocks,
-      offensiveRebounds: playerMatchStats.offensiveRebounds,
-      defensiveRebounds: playerMatchStats.defensiveRebounds,
-    })
-    .from(playerMatchStats)
-    .where(eq(playerMatchStats.matchId, matchId));
+  const statsQuery = match.status === "SCHEDULED"
+    ? Promise.resolve([] as Array<{
+        playerId: string;
+        points: number | null;
+        assists: number | null;
+        steals: number | null;
+        blocks: number | null;
+        offensiveRebounds: number | null;
+        defensiveRebounds: number | null;
+      }>)
+    : db
+        .select({
+          playerId: playerMatchStats.playerId,
+          points: playerMatchStats.points,
+          assists: playerMatchStats.assists,
+          steals: playerMatchStats.steals,
+          blocks: playerMatchStats.blocks,
+          offensiveRebounds: playerMatchStats.offensiveRebounds,
+          defensiveRebounds: playerMatchStats.defensiveRebounds,
+        })
+        .from(playerMatchStats)
+        .where(eq(playerMatchStats.matchId, matchId));
+
+  const [roster, stats] = await Promise.all([rosterQuery, statsQuery]);
 
   const hasStats = stats.length > 0;
 
@@ -193,9 +203,11 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
     assists: getLeader('assists'),
     steals: getLeader('steals'),
   };
+  const canShareMatch = match.status === "COMPLETED";
 
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "40px 20px" }}>
+      <PublicNav />
       <div style={{ marginBottom: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Link href="/" style={{ color: "var(--text-secondary)", textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
           <ChevronLeft size={16} />
@@ -211,6 +223,7 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
           status={match.status}
           division={null}
           matchDate={match.matchDate.toLocaleDateString()}
+          disabled={!canShareMatch}
           potgName={match.potgFirstName ? `${match.potgFirstName} ${match.potgLastName}` : null}
           potgJersey={match.potgJersey}
           highlights={highlights}

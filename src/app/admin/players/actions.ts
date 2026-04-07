@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 // Type map for safely casting enum
 const validPositions = ["PG", "SG", "SF", "PF", "C"] as const;
@@ -11,6 +12,8 @@ type Position = typeof validPositions[number];
 
 export async function createPlayer(formData: FormData) {
   try {
+    await requireAdminSession();
+
     const firstName = formData.get("firstName")?.toString().trim();
     const lastName = formData.get("lastName")?.toString().trim();
     const teamId = formData.get("teamId")?.toString();
@@ -46,6 +49,8 @@ export async function createPlayer(formData: FormData) {
 
 export async function bulkCreatePlayers(teamId: string, rawText: string) {
   try {
+    await requireAdminSession();
+
     if (!teamId) return { success: false, error: "A Team must be selected." };
     if (!rawText.trim()) return { success: false, error: "Input text is empty." };
 
@@ -105,6 +110,8 @@ export async function bulkCreatePlayers(teamId: string, rawText: string) {
 
 export async function deletePlayer(id: string) {
   try {
+    await requireAdminSession();
+
     await db.delete(players).where(eq(players.id, id));
     revalidatePath("/admin/players");
     return { success: true };

@@ -7,8 +7,11 @@ import { notFound } from "next/navigation";
 import ScoreController from "./ScoreController";
 import BoxScoreManager from "./BoxScoreManager";
 import PlayerOfTheGameSelector from "./PlayerOfTheGameSelector";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export default async function MatchDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminSession();
+
   const resolvedParams = await params;
   const matchId = resolvedParams.id;
 
@@ -43,8 +46,8 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
     notFound();
   }
 
-  // Fetch valid active roster (filter out any null teamId rows for type safety)
-  const activeRosterRaw = await db
+  // Fetch roster and stats in parallel once the match context is known.
+  const activeRosterQuery = db
       .select({ 
           id: players.id, 
           firstName: players.firstName, 
@@ -54,13 +57,13 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
       })
       .from(players)
       .where(or(eq(players.teamId, matchData.homeTeamId), eq(players.teamId, matchData.awayTeamId)));
-  const activeRoster = activeRosterRaw.filter((p): p is typeof p & { teamId: string } => p.teamId !== null);
-
-  // Fetch existing stats if any
-  const existingStats = await db
+  const existingStatsQuery = db
       .select()
       .from(playerMatchStats)
       .where(eq(playerMatchStats.matchId, matchId));
+
+  const [activeRosterRaw, existingStats] = await Promise.all([activeRosterQuery, existingStatsQuery]);
+  const activeRoster = activeRosterRaw.filter((p): p is typeof p & { teamId: string } => p.teamId !== null);
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', paddingBottom: '60px' }}>

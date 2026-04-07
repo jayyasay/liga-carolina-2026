@@ -13,6 +13,7 @@ type MatchShareProps = {
   status: string | null;
   division: string | null;
   matchDate: string;
+  disabled?: boolean;
   potgName?: string | null;
   potgJersey?: number | null;
   highlights?: {
@@ -28,9 +29,10 @@ export default function MatchShareButton(props: MatchShareProps) {
   const [isCapturing, setIsCapturing] = useState(false);
 
   const isCompleted = props.status === "COMPLETED";
+  const isDisabled = props.disabled ?? !isCompleted;
 
   const handleShare = async () => {
-    if (isCapturing || !cardRef.current) return;
+    if (isDisabled || isCapturing || !cardRef.current) return;
     setIsCapturing(true);
 
     try {
@@ -60,22 +62,35 @@ export default function MatchShareButton(props: MatchShareProps) {
 
   return (
     <>
-      <button
-        onClick={handleShare}
-        disabled={isCapturing}
-        className="secondary-btn"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "8px 18px",
-          fontSize: "0.85rem",
-          fontWeight: 600,
-        }}
-      >
-        {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <Share size={16} />}
-        {isCapturing ? "Generating..." : "Share Match"}
-      </button>
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <button
+          onClick={handleShare}
+          disabled={isDisabled || isCapturing}
+          className="secondary-btn"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "8px 18px",
+            fontSize: "0.85rem",
+            fontWeight: 600,
+            opacity: isDisabled ? 0.45 : isCapturing ? 0.75 : 1,
+            cursor: isDisabled ? "not-allowed" : "pointer",
+            width: "fit-content",
+            alignSelf: "flex-end",
+          }}
+          aria-disabled={isDisabled}
+          title={isDisabled ? "Share Match is available only after the match is completed." : "Download a shareable match image."}
+        >
+          {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <Share size={16} />}
+          {isCapturing ? "Generating..." : isDisabled ? "Share Unavailable" : "Share Match"}
+        </button>
+        {isDisabled && (
+          <div style={{ marginTop: "0px", fontSize: "0.8rem", color: "var(--text-muted)", textAlign: "right" }}>
+            Available after the match is completed.
+          </div>
+        )}
+      </div>
 
       {/* Hidden share card rendered off-screen */}
       <div style={{ position: "fixed", top: "-9999px", left: "-9999px", zIndex: -1 }}>
@@ -92,7 +107,10 @@ export default function MatchShareButton(props: MatchShareProps) {
         >
           {/* Top bar */}
           <div style={{ padding: "16px 24px", background: "rgba(255,255,255,0.05)", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "1.2rem", fontWeight: 700, letterSpacing: "3px", color: "#fe6600" }}>LIGA STATS</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <img src="/logo.jpg" alt="Liga Carolina logo" style={{ height: "32px", width: "auto" }} />
+              <span style={{ fontSize: "1.2rem", fontWeight: 700, letterSpacing: "3px", color: "#fe6600" }}>Liga Carolina</span>
+            </div>
             <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
               {props.division && (
                 <span style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px", padding: "3px 8px", background: "rgba(254,102,0,0.2)", border: "1px solid rgba(254,102,0,0.4)", borderRadius: "4px", color: "#fe6600" }}>{props.division}</span>
@@ -143,7 +161,7 @@ export default function MatchShareButton(props: MatchShareProps) {
           {/* POTG banner if available */}
           {props.potgName && (
             <div style={{ margin: "0 24px 24px", padding: "14px 20px", background: "linear-gradient(135deg, rgba(255,183,0,0.15), rgba(255,100,0,0.08))", border: "1px solid rgba(255,183,0,0.3)", borderRadius: "10px", display: "flex", alignItems: "center", gap: "14px" }}>
-               <Trophy size={32} color="#ffb700" />
+              <Trophy size={32} color="#ffb700" />
               <div>
                 <div style={{ fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "2px", color: "#ffb700", marginBottom: "3px" }}>Player of the Game</div>
                 <div style={{ fontSize: "1.2rem", fontWeight: 800, color: "white" }}>
@@ -176,7 +194,7 @@ export default function MatchShareButton(props: MatchShareProps) {
 
           {/* Footer */}
           <div style={{ padding: "12px 24px", borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: "center", fontSize: "0.7rem", color: "rgba(255,255,255,0.25)", letterSpacing: "2px", textTransform: "uppercase" }}>
-            ligastats.app
+            liga-carolina-2026.vercel.app
           </div>
         </div>
       </div>

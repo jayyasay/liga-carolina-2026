@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { useTransition, useState } from "react";
 import { logoutAction } from "./login/actions";
 import { 
@@ -64,7 +65,10 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
         padding: "0 20px",
         justifyContent: "space-between",
       }} className="mobile-only-flex">
-        <h2 className="brand-gradient" style={{ fontSize: "1.1rem", margin: 0 }}>LIGA STATS</h2>
+        <h2 className="brand-gradient" style={{ fontSize: "1.1rem", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
+          <Image src="/logo.jpg" alt="Liga Carolina Logo" width={24} height={24} style={{ borderRadius: "4px", objectFit: "contain" }} />
+          Liga Carolina
+        </h2>
         <button 
           onClick={toggleMobileMenu}
           style={{ background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}
@@ -91,7 +95,10 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
       }} className="responsive-sidebar">
         {/* Brand */}
         <div style={{ padding: "28px 24px", borderBottom: "1px solid var(--border-light)", flexShrink: 0 }}>
-          <h2 className="brand-gradient" style={{ fontSize: "1.25rem", marginBottom: "4px" }}>LIGA STATS</h2>
+          <h2 className="brand-gradient" style={{ fontSize: "1.25rem", marginBottom: "4px", display: "flex", alignItems: "center", gap: "8px" }}>
+            <Image src="/logo.jpg" alt="Liga Carolina Logo" width={28} height={28} style={{ borderRadius: "4px", objectFit: "contain" }} />
+            Liga Carolina
+          </h2>
           <span className="badge badge-live" style={{ fontSize: "0.65rem" }}>Admin Portal</span>
         </div>
 

@@ -4,8 +4,11 @@ import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import TeamDetailManager from "./TeamDetailManager";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export default async function TeamDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireAdminSession();
+
   const resolvedParams = await params;
   const teamId = resolvedParams.id;
   

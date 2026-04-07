@@ -4,9 +4,12 @@ import { db } from "@/db";
 import { playerMatchStats, players } from "@/db/schema";
 import { eq, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export async function uploadMatchStats(matchId: string, homeTeamId: string, awayTeamId: string, rawText: string) {
   try {
+    await requireAdminSession();
+
     if (!rawText.trim()) return { success: false, error: "CSV text is empty." };
 
     // Fetch all players mapped to either of the two teams playing in this match

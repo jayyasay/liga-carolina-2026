@@ -3,8 +3,11 @@ import { players, teams } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import PlayerManager from "./PlayerManager";
 import DeletePlayerButton from "./DeletePlayerButton";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export default async function AdminPlayersPage() {
+  await requireAdminSession();
+
   // Fetch teams for the dropdowns
   const allTeams = await db.select({ id: teams.id, name: teams.name }).from(teams).orderBy(teams.name);
 

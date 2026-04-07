@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { db } from "@/db";
 import { matches, teams, players } from "@/db/schema";
-import { desc, count } from "drizzle-orm";
+import { count } from "drizzle-orm";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export default async function AdminDashboardPage() {
-  const [{ count: mCount }] = await db.select({ count: count() }).from(matches);
-  const [{ count: tCount }] = await db.select({ count: count() }).from(teams);
-  const [{ count: pCount }] = await db.select({ count: count() }).from(players);
+  await requireAdminSession();
+
+  const [[{ count: mCount }], [{ count: tCount }], [{ count: pCount }]] = await Promise.all([
+    db.select({ count: count() }).from(matches),
+    db.select({ count: count() }).from(teams),
+    db.select({ count: count() }).from(players),
+  ]);
 
   return (
     <div style={{ maxWidth: '1000px' }}>
@@ -15,7 +20,7 @@ export default async function AdminDashboardPage() {
         Welcome to your administrative control center. Select a module to manage your league.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div className="dashboard-overview-grid">
          <Link href="/admin/matches" style={{ display: 'block', textDecoration: 'none' }}>
            <div className="glass-panel" style={{ padding: '32px', borderLeft: '4px solid var(--brand-primary)', transition: 'background 0.2s', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

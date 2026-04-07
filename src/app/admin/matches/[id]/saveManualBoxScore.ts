@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { playerMatchStats } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 type StatInput = {
   playerId: string;
@@ -17,6 +18,8 @@ type StatInput = {
 
 export async function saveManualBoxScore(matchId: string, statsData: StatInput[]) {
   try {
+    await requireAdminSession();
+
     // Drop all existing stats for this match first (replace strategy)
     await db.delete(playerMatchStats).where(eq(playerMatchStats.matchId, matchId));
 

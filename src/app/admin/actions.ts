@@ -1,11 +1,12 @@
 "use server";
 
-import { db } from "@/db";
-import { playerMatchStats } from "@/db/schema";
+import { requireAdminSession } from "@/lib/admin-auth";
 // We would import 'eq', 'and' from 'drizzle-orm' when implementing real lookups
 
 export async function uploadStatsToDatabase(parsedData: any[]) {
   try {
+    await requireAdminSession();
+
     console.log(`Processing ${parsedData.length} stats rows for Neon database...`);
     
     // In a fully integrated scenario, we would:

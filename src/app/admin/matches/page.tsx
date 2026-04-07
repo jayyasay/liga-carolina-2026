@@ -5,18 +5,26 @@ import { alias } from "drizzle-orm/pg-core";
 import Link from "next/link";
 import CreateMatchForm from "./CreateMatchForm";
 import DeleteMatchButton from "./DeleteMatchButton";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 const validDivisions = ["Kids Camp", "Midgets", "Juniors", "Seniors", "Open Seniors Division"];
+type Division = typeof validDivisions[number];
 
 export default async function AdminMatchesPage({ searchParams }: { searchParams: Promise<{ division?: string }> }) {
+  await requireAdminSession();
+
   const { division: filterDivision } = await searchParams;
+  const activeDivision: Division | null = filterDivision && validDivisions.includes(filterDivision as Division)
+    ? (filterDivision as Division)
+    : null;
+  const divisionFilter = activeDivision as Division | null | any;
 
   const allTeams = await db.select({ id: teams.id, name: teams.name, division: teams.division }).from(teams).orderBy(asc(teams.name));
 
   const homeTeams = alias(teams, "homeTeams");
   const awayTeams = alias(teams, "awayTeams");
 
-  const allMatchesRaw = await db
+  const baseMatchesQuery = db
     .select({
       id: matches.id,
       matchDate: matches.matchDate,
@@ -31,12 +39,11 @@ export default async function AdminMatchesPage({ searchParams }: { searchParams:
     })
     .from(matches)
     .leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
-    .leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
-    .orderBy(desc(matches.matchDate));
+    .leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id));
 
-  const filteredMatches = filterDivision && validDivisions.includes(filterDivision)
-    ? allMatchesRaw.filter(m => m.division === filterDivision)
-    : allMatchesRaw;
+  const filteredMatches = activeDivision
+    ? await baseMatchesQuery.where(eq(homeTeams.division, divisionFilter)).orderBy(desc(matches.matchDate))
+    : await baseMatchesQuery.orderBy(desc(matches.matchDate));
 
   return (
     <div style={{ maxWidth: '1000px' }}>

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { teams, players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 const validPositions = ["PG", "SG", "SF", "PF", "C"] as const;
 type Position = typeof validPositions[number];
@@ -13,6 +14,8 @@ type Division = typeof validDivisions[number];
 
 export async function updateTeam(id: string, formData: FormData) {
   try {
+    await requireAdminSession();
+
     const name = formData.get("name")?.toString();
     const shortName = formData.get("shortName")?.toString();
     const primaryColor = formData.get("primaryColor")?.toString() || "#000000";
@@ -39,6 +42,8 @@ export async function updateTeam(id: string, formData: FormData) {
 
 export async function addPlayerToTeam(teamId: string, formData: FormData) {
   try {
+    await requireAdminSession();
+
     const firstName = formData.get("firstName")?.toString();
     const lastName = formData.get("lastName")?.toString();
     const rawJersey = parseInt(formData.get("jerseyNumber")?.toString() || "", 10);
@@ -62,6 +67,8 @@ export async function addPlayerToTeam(teamId: string, formData: FormData) {
 
 export async function updatePlayer(playerId: string, teamId: string, formData: FormData) {
   try {
+    await requireAdminSession();
+
     const firstName = formData.get("firstName")?.toString();
     const lastName = formData.get("lastName")?.toString();
     const rawJersey = parseInt(formData.get("jerseyNumber")?.toString() || "", 10);
@@ -87,6 +94,8 @@ export async function updatePlayer(playerId: string, teamId: string, formData: F
 
 export async function deletePlayerFromTeam(playerId: string, teamId: string) {
   try {
+    await requireAdminSession();
+
     await db.delete(players).where(eq(players.id, playerId));
     revalidatePath(`/admin/teams/${teamId}`);
     return { success: true };

@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { teams, players } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 const validPositions = ["PG", "SG", "SF", "PF", "C"] as const;
 type Position = typeof validPositions[number];
@@ -13,6 +14,8 @@ type Division = typeof validDivisions[number];
 
 export async function bulkCreateTeamsWithRoster(rawText: string) {
   try {
+    await requireAdminSession();
+
     if (!rawText.trim()) return { success: false, error: "Upload payload is empty." };
 
     const lines = rawText.split('\n').filter(line => line.trim().length > 0);
@@ -129,6 +132,8 @@ export async function bulkCreateTeamsWithRoster(rawText: string) {
 
 export async function createTeam(formData: FormData) {
   try {
+    await requireAdminSession();
+
     const name = formData.get("name")?.toString();
     const shortName = formData.get("shortName")?.toString();
     const primaryColor = formData.get("primaryColor")?.toString() || "#000000";
@@ -160,6 +165,8 @@ export async function createTeam(formData: FormData) {
 
 export async function deleteTeam(id: string) {
   try {
+    await requireAdminSession();
+
     await db.delete(teams).where(eq(teams.id, id));
     revalidatePath("/admin/teams");
     return { success: true };

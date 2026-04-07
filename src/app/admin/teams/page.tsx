@@ -4,8 +4,11 @@ import CreateTeamForm from "./CreateTeamForm";
 import DeleteTeamButton from "./DeleteTeamButton";
 import { desc } from "drizzle-orm";
 import Link from "next/link";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export default async function AdminTeamsPage() {
+  await requireAdminSession();
+
   // Query Drizzle directly server-side
   const allTeams = await db.select().from(teams).orderBy(desc(teams.createdAt));
 

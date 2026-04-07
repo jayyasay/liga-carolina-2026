@@ -47,16 +47,18 @@ export default function CreateTeamForm() {
   return (
     <div className="glass-panel" style={{ padding: '24px', marginBottom: '32px' }}>
       
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px' }}>
+      <div className="admin-tabs-container">
         <button 
+          type="button"
           onClick={() => setMode("single")}
-          style={{ background: 'none', border: 'none', color: mode === "single" ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: mode === "single" ? 600 : 400, cursor: 'pointer', fontSize: '1.1rem' }}
+          className={`admin-tab ${mode === "single" ? "active" : ""}`}
         >
           Add Single Team
         </button>
         <button 
+          type="button"
           onClick={() => setMode("bulk")}
-          style={{ background: 'none', border: 'none', color: mode === "bulk" ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: mode === "bulk" ? 600 : 400, cursor: 'pointer', fontSize: '1.1rem' }}
+          className={`admin-tab ${mode === "bulk" ? "active" : ""}`}
         >
           Bulk League Importer
         </button>

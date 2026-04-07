@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { players, teams, playerMatchStats } from "@/db/schema";
 import { eq, sum } from "drizzle-orm";
 import Link from "next/link";
+import PublicNav from "@/components/PublicNav";
 import { 
   BarChart2, 
   Flame, 
@@ -9,11 +10,10 @@ import {
   Target, 
   Zap, 
   Medal,
-  ChevronLeft,
-  Trophy
 } from "lucide-react";
 
 const DIVISIONS = ["Kids Camp", "Midgets", "Juniors", "Seniors", "Open Seniors Division"] as const;
+type Division = typeof DIVISIONS[number];
 
 const STAT_CATEGORIES = [
   { key: "points", label: "Points", col: "PTS", icon: Flame, color: "#ff4d4d" },
@@ -22,11 +22,13 @@ const STAT_CATEGORIES = [
   { key: "steals", label: "Steals", col: "STL", icon: Zap, color: "#ffb700" },
 ] as const;
 
-export const metadata = { title: "Top 10 Leaders — Liga Stats" };
+export const metadata = { title: "Top 10 Leaders — Liga Carolina" };
 
 export default async function LeadersPage({ searchParams }: { searchParams: Promise<{ division?: string }> }) {
   const { division: selectedDiv } = await searchParams;
-  const activeDiv = selectedDiv && DIVISIONS.includes(selectedDiv as any) ? selectedDiv : DIVISIONS[3]; // default Seniors
+  const activeDiv: Division = selectedDiv && (DIVISIONS as readonly string[]).includes(selectedDiv)
+    ? selectedDiv as Division
+    : DIVISIONS[3]; // default Seniors
 
   // Aggregate per player: sum each stat across all matches
   const rawStats = await db
@@ -48,6 +50,7 @@ export default async function LeadersPage({ searchParams }: { searchParams: Prom
     .from(playerMatchStats)
     .innerJoin(players, eq(playerMatchStats.playerId, players.id))
     .innerJoin(teams, eq(players.teamId, teams.id))
+    .where(eq(teams.division, activeDiv))
     .groupBy(
       playerMatchStats.playerId,
       players.firstName,
@@ -59,9 +62,7 @@ export default async function LeadersPage({ searchParams }: { searchParams: Prom
       teams.division,
     );
 
-  // Filter by active division
   const divisionStats = rawStats
-    .filter(r => r.division === activeDiv)
     .map(r => ({
       ...r,
       totalPoints: Number(r.totalPoints ?? 0),
@@ -75,20 +76,7 @@ export default async function LeadersPage({ searchParams }: { searchParams: Prom
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 20px" }}>
-      {/* Header */}
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "40px", flexWrap: "wrap", gap: "20px" }}>
-        <div>
-          <h1 className="brand-gradient" style={{ fontSize: "2rem", marginBottom: "4px" }}>LIGA STATS</h1>
-          <p style={{ color: "var(--text-secondary)" }}>Top 10 Statistical Leaders</p>
-        </div>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <Link href="/" className="secondary-btn" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "8px" }}>
-            <ChevronLeft size={16} />
-            Matches
-          </Link>
-          <Link href="/standings" className="secondary-btn" style={{ textDecoration: "none" }}>Standings</Link>
-        </div>
-      </header>
+      <PublicNav />
 
       {/* Division tabs */}
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "40px" }}>

@@ -4,8 +4,10 @@ import { matches, teams, players } from "@/db/schema";
 import { desc, eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Trophy } from 'lucide-react';
+import PublicNav from '@/components/PublicNav';
 
 const validDivisions = ["Kids Camp", "Midgets", "Juniors", "Seniors", "Open Seniors Division"];
+type Division = typeof validDivisions[number];
 
 export default async function MatchesPage({ searchParams }: { searchParams: Promise<{ division?: string }> }) {
   const resolvedParams = await searchParams;
@@ -14,8 +16,12 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
   const homeTeams = alias(teams, "homeTeams");
   const awayTeams = alias(teams, "awayTeams");
   const potgPlayers = alias(players, "potgPlayers");
+  const activeDivision: Division | null = filterDivision && validDivisions.includes(filterDivision as Division)
+    ? (filterDivision as Division)
+    : null;
+  const divisionFilter = activeDivision as Division | null | any;
 
-  const allMatchesRaw = await db
+  const baseMatchesQuery = db
     .select({
       id: matches.id,
       matchDate: matches.matchDate,
@@ -35,31 +41,24 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
     .from(matches)
     .leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
     .leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
-    .leftJoin(potgPlayers, eq(matches.playerOfTheGameId, potgPlayers.id))
-    .orderBy(desc(matches.matchDate));
+    .leftJoin(potgPlayers, eq(matches.playerOfTheGameId, potgPlayers.id));
 
-  let finalMatches = allMatchesRaw;
-  if (filterDivision && validDivisions.includes(filterDivision)) {
-     finalMatches = allMatchesRaw.filter(m => m.division === filterDivision);
-  }
+  const allMatchesRaw = activeDivision
+    ? await baseMatchesQuery.where(eq(homeTeams.division, divisionFilter)).orderBy(desc(matches.matchDate))
+    : await baseMatchesQuery.orderBy(desc(matches.matchDate));
 
-  const upcomingMatches = finalMatches.filter(m => m.status === 'SCHEDULED' || m.status === 'LIVE');
-  const completedMatches = finalMatches.filter(m => m.status === 'COMPLETED');
+  const upcomingMatches = allMatchesRaw
+    .filter(m => m.status === 'SCHEDULED' || m.status === 'LIVE')
+    .sort((a, b) => a.matchDate.getTime() - b.matchDate.getTime());
+
+  const completedMatches = allMatchesRaw
+    .filter(m => m.status === 'COMPLETED')
+    .sort((a, b) => b.matchDate.getTime() - a.matchDate.getTime());
 
   return (
     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
       
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
-        <div>
-          <h1 className="brand-gradient" style={{ fontSize: '2rem' }}>LIGA STATS</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Premium Basketball Dashboard</p>
-        </div>
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <Link href="/leaders" className="secondary-btn" style={{ textDecoration: 'none' }}>Top 10 Leaders</Link>
-          <Link href="/standings" className="secondary-btn" style={{ textDecoration: 'none' }}>Standings</Link>
-          <Link href="/admin" className="primary-btn" style={{ textDecoration: 'none' }}>Admin Login</Link>
-        </div>
-      </header>
+      <PublicNav />
 
       {/* Division Filter Bar */}
       <div style={{ marginBottom: '40px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

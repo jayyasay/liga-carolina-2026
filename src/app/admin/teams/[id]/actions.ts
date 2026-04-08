@@ -17,7 +17,7 @@ export async function updateTeam(id: string, formData: FormData) {
     await requireAdminSession();
 
     const name = formData.get("name")?.toString();
-    const shortName = formData.get("shortName")?.toString();
+    const shortName = formData.get("shortName")?.toString().trim() || "";
     const primaryColor = formData.get("primaryColor")?.toString() || "#000000";
     const divStr = formData.get("division")?.toString();
 
@@ -26,8 +26,8 @@ export async function updateTeam(id: string, formData: FormData) {
       division = divStr as Division;
     }
 
-    if (!name || !shortName) {
-      return { success: false, error: "Name and Short Name are required." };
+    if (!name) {
+      return { success: false, error: "Team name is required." };
     }
 
     await db.update(teams).set({ name, shortName, primaryColor, division, updatedAt: new Date() }).where(eq(teams.id, id));

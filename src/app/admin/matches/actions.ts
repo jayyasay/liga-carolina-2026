@@ -25,6 +25,9 @@ export async function createMatch(formData: FormData) {
     }
 
     const matchDate = new Date(matchDateStr);
+    if (Number.isNaN(matchDate.getTime())) {
+      return { success: false, error: "Please enter a valid match date and time." };
+    }
 
     await db.insert(matches).values({
       homeTeamId,
@@ -37,6 +40,50 @@ export async function createMatch(formData: FormData) {
     return { success: true };
   } catch (error: any) {
     console.error("Failed to create match:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function updateScheduledMatchDate(id: string, matchDateStr: string) {
+  try {
+    await requireAdminSession();
+
+    if (!matchDateStr?.trim()) {
+      return { success: false, error: "Please enter a valid match date and time." };
+    }
+
+    const matchDate = new Date(matchDateStr);
+    if (Number.isNaN(matchDate.getTime())) {
+      return { success: false, error: "Please enter a valid match date and time." };
+    }
+
+    const existing = await db
+      .select({ status: matches.status })
+      .from(matches)
+      .where(eq(matches.id, id))
+      .limit(1);
+
+    if (!existing[0]) {
+      return { success: false, error: "Match not found." };
+    }
+
+    if (existing[0].status !== "SCHEDULED") {
+      return { success: false, error: "Only scheduled matches can be rescheduled." };
+    }
+
+    await db.update(matches)
+      .set({
+        matchDate,
+        updatedAt: new Date(),
+      })
+      .where(eq(matches.id, id));
+
+    revalidatePath("/admin/matches");
+    revalidatePath(`/admin/matches/${id}`);
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to update scheduled match:", error);
     return { success: false, error: error.message };
   }
 }

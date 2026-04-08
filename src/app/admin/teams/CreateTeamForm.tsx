@@ -75,8 +75,8 @@ export default function CreateTeamForm() {
               <input type="text" name="name" required placeholder="e.g. Los Angeles Lakers" style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)' }} />
             </div>
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Short Name (Abbr)</label>
-              <input type="text" name="shortName" required placeholder="e.g. LAL" maxLength={10} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)' }} />
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Short Name (Optional)</label>
+              <input type="text" name="shortName" placeholder="e.g. LAL" maxLength={10} style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.2)', color: 'var(--text-primary)' }} />
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Division</label>
@@ -100,7 +100,7 @@ export default function CreateTeamForm() {
            <div style={{ marginBottom: '16px' }}>
             <label style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
               <span>Paste Master Roster Data</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Format: Team, Short, Color, [Division?], First, Last, Jersey, Pos</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Format: Team, Short Optional, Color, [Division?], First, Last, Jersey, Pos</span>
             </label>
             <textarea 
               ref={textAreaRef}

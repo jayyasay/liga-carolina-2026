@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { updateTeam, addPlayerToTeam, updatePlayer, deletePlayerFromTeam } from "./actions";
 
@@ -83,7 +84,9 @@ function PlayerRow({ player, teamId }: { player: Player; teamId: string }) {
         {player.jerseyNumber !== null ? `#${player.jerseyNumber}` : "--"}
       </td>
       <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>
-        {player.firstName} {player.lastName}
+        <Link href={`/players/${player.id}`} style={{ color: "var(--text-primary)", textDecoration: "none" }} className="hover-underline">
+          {player.firstName} {player.lastName}
+        </Link>
       </td>
       <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{player.position || "--"}</td>
       <td style={{ padding: "12px 16px", textAlign: "right" }}>
@@ -146,9 +149,14 @@ export default function TeamDetailManager({ team, roster }: { team: Team; roster
   return (
     <div>
       {/* Tab Nav */}
-      <div style={{ display: "flex", gap: "16px", marginBottom: "24px", borderBottom: "1px solid var(--border-light)", paddingBottom: "16px" }}>
+      <div className="admin-tabs-container">
         {(["roster", "edit"] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ background: "none", border: "none", color: tab === t ? "var(--brand-primary)" : "var(--text-secondary)", fontWeight: tab === t ? 600 : 400, cursor: "pointer", fontSize: "1.1rem", borderBottom: tab === t ? "2px solid var(--brand-primary)" : "2px solid transparent", paddingBottom: "4px", textTransform: "capitalize" }}>
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            type="button"
+            className={`admin-tab ${tab === t ? "active" : ""}`}
+          >
             {t === "roster" ? "Roster" : "Edit Team Details"}
           </button>
         ))}
@@ -167,8 +175,8 @@ export default function TeamDetailManager({ team, roster }: { team: Team; roster
                 <input type="text" name="name" required defaultValue={team.name} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid var(--border-light)", background: "rgba(0,0,0,0.2)", color: "white" }} />
               </div>
               <div>
-                <label style={{ display: "block", marginBottom: "6px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>Short Name</label>
-                <input type="text" name="shortName" required defaultValue={team.shortName} maxLength={10} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid var(--border-light)", background: "rgba(0,0,0,0.2)", color: "white" }} />
+                <label style={{ display: "block", marginBottom: "6px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>Short Name (Optional)</label>
+                <input type="text" name="shortName" defaultValue={team.shortName || ""} maxLength={10} style={{ width: "100%", padding: "10px", borderRadius: "4px", border: "1px solid var(--border-light)", background: "rgba(0,0,0,0.2)", color: "white" }} />
               </div>
               <div>
                 <label style={{ display: "block", marginBottom: "6px", fontSize: "0.9rem", color: "var(--text-secondary)" }}>Primary Color</label>
@@ -224,7 +232,7 @@ export default function TeamDetailManager({ team, roster }: { team: Team; roster
           </div>
 
           {/* Roster Table with Inline Edit */}
-          <div className="glass-panel" style={{ overflow: "hidden" }}>
+          <div className="glass-panel" style={{ overflow: "hidden", background: "var(--surface-base)" }}>
             <div style={{ padding: "16px 24px", borderBottom: "1px solid var(--border-light)" }}>
               <h3 style={{ margin: 0, fontSize: "1rem" }}>Current Roster ({roster.length} players)</h3>
             </div>

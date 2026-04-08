@@ -49,7 +49,7 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: "var(--bg-color)" }}>
+    <div style={{ display: "flex", minHeight: "100dvh", background: "var(--bg-color)" }} className="admin-shell">
       {/* Mobile Top Bar */}
       <div style={{
         display: "none",
@@ -185,12 +185,16 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ── Main Content — offset by sidebar width, independently scrollable ── */}
-      <main style={{ marginLeft: "260px", flex: 1, overflowY: "auto", height: "100vh", padding: "40px" }} className="admin-main">
+      <main style={{ marginLeft: "260px", flex: 1, padding: "40px", height: "100dvh", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }} className="admin-main">
         {children}
       </main>
 
       <style jsx global>{`
         @media (min-width: 1025px) {
+          .admin-shell {
+            height: 100dvh;
+            overflow: hidden;
+          }
           .responsive-sidebar {
             transform: translateX(0) !important;
           }
@@ -199,11 +203,20 @@ export default function AdminNav({ children }: { children: React.ReactNode }) {
           }
         }
         @media (max-width: 1024px) {
+          .admin-shell {
+            display: block !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
           .mobile-only-flex {
             display: flex !important;
           }
           .admin-main {
-            padding-top: 80px !important;
+            margin-left: 0 !important;
+            height: auto !important;
+            overflow: visible !important;
+            min-height: calc(100dvh - 80px);
+            padding: 80px 20px 20px !important;
           }
         }
       `}</style>

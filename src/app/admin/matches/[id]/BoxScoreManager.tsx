@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import MatchStatsUploader from "./MatchStatsUploader";
 import { saveManualBoxScore } from "./saveManualBoxScore";
+import Link from "next/link";
 
 type Player = { id: string, firstName: string, lastName: string, teamId: string, jerseyNumber: number | null };
 type StatEntry = { playerId: string, teamId: string, points: number, rebounds: number, assists: number, blocks: number, steals: number };
@@ -71,7 +72,7 @@ export default function BoxScoreManager({
   const renderTeamTable = (teamName: string | null, players: Player[]) => (
       <div style={{ marginBottom: '32px' }}>
           <h3 style={{ fontSize: '1.1rem', marginBottom: '12px', color: 'var(--brand-primary)' }}>{teamName} Roster</h3>
-          <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+          <div style={{ overflowX: 'auto', background: 'var(--surface-base)', borderRadius: '12px', border: '1px solid var(--border-light)', boxShadow: '0 4px 14px rgba(34, 56, 38, 0.03)' }}>
               <table style={{ width: '100%', textAlign: 'left', borderCollapse: 'collapse' }}>
                   <thead style={{ background: 'var(--surface-hover)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       <tr>
@@ -89,7 +90,9 @@ export default function BoxScoreManager({
                           return (
                               <tr key={p.id} style={{ borderTop: '1px solid var(--border-light)' }}>
                                   <td style={{ padding: '12px', fontSize: '0.9rem' }}>
-                                     <strong style={{ color: 'white' }}>{p.firstName} {p.lastName}</strong>
+                                     <Link href={`/players/${p.id}`} style={{ color: 'var(--text-primary)', textDecoration: 'none' }} className="hover-underline">
+                                       <strong>{p.firstName} {p.lastName}</strong>
+                                     </Link>
                                      <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>#{p.jerseyNumber}</span>
                                   </td>
                                   <td style={{ padding: '8px' }}>
@@ -120,17 +123,19 @@ export default function BoxScoreManager({
   );
 
   return (
-    <div className="glass-panel" style={{ padding: '24px', marginBottom: '40px' }}>
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px' }}>
+      <div className="glass-panel" style={{ padding: '24px', marginBottom: '40px' }}>
+      <div className="admin-tabs-container">
         <button 
           onClick={() => setTab("manual")}
-          style={{ background: 'none', border: 'none', color: tab === "manual" ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: tab === "manual" ? 600 : 400, cursor: 'pointer', fontSize: '1.1rem' }}
+          className={`admin-tab ${tab === "manual" ? "active" : ""}`}
+          type="button"
         >
           Manual Box Score Input
         </button>
         <button 
           onClick={() => setTab("csv")}
-          style={{ background: 'none', border: 'none', color: tab === "csv" ? 'var(--brand-primary)' : 'var(--text-secondary)', fontWeight: tab === "csv" ? 600 : 400, cursor: 'pointer', fontSize: '1.1rem' }}
+          className={`admin-tab ${tab === "csv" ? "active" : ""}`}
+          type="button"
         >
           Bulk CSV Tool
         </button>

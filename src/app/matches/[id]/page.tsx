@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import PublicNav from "@/components/PublicNav";
 import MatchShareButton from "@/components/MatchShareButton";
 import { Trophy, ChevronLeft, Award } from "lucide-react";
+import { getEffectiveMatchStatus, hasPendingStats } from "@/lib/match-state";
 
 export default async function PublicMatchDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: matchId } = await params;
@@ -19,7 +20,6 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
     .select({
       id: matches.id,
       matchDate: matches.matchDate,
-      venue: matches.venue,
       status: matches.status,
       homeScore: matches.homeScore,
       awayScore: matches.awayScore,
@@ -48,6 +48,8 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
   const match = results[0];
   if (!match || !match.homeTeamId || !match.awayTeamId) notFound();
 
+  const effectiveStatus = getEffectiveMatchStatus(match.status, match.matchDate);
+
   const rosterQuery = db
     .select({
       id: players.id,
@@ -60,7 +62,7 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
     .from(players)
     .where(or(eq(players.teamId, match.homeTeamId), eq(players.teamId, match.awayTeamId)));
 
-  const statsQuery = match.status === "SCHEDULED"
+  const statsQuery = effectiveStatus === "SCHEDULED"
     ? Promise.resolve([] as Array<{
         playerId: string;
         points: number | null;
@@ -86,12 +88,13 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
   const [roster, stats] = await Promise.all([rosterQuery, statsQuery]);
 
   const hasStats = stats.length > 0;
+  const pendingStats = hasPendingStats(effectiveStatus, match.matchDate, stats.length);
 
   // Build a stat lookup map
   const statsMap = new Map(stats.map(s => [s.playerId, s]));
 
-  const statusBadgeClass = match.status === 'LIVE' ? 'badge-live' : match.status === 'COMPLETED' ? 'badge-completed' : '';
-  const statusLabel = match.status === 'COMPLETED' ? 'FINAL' : match.status;
+  const statusBadgeClass = effectiveStatus === 'LIVE' ? 'badge-live' : effectiveStatus === 'COMPLETED' ? 'badge-completed' : '';
+  const statusLabel = effectiveStatus === 'COMPLETED' ? 'FINAL' : effectiveStatus;
 
   // Determine which team the POTG belongs to
   const potgTeamName = match.potgTeamId === match.homeTeamId
@@ -109,7 +112,9 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
       <div className="glass-panel" style={{ overflow: "hidden", marginBottom: "32px" }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-light)", display: "flex", alignItems: "center", gap: "12px" }}>
           <div style={{ width: "14px", height: "14px", borderRadius: "50%", background: teamColor || "var(--text-muted)", flexShrink: 0 }}></div>
-          <h3 style={{ margin: 0, fontSize: "1.2rem" }}>{teamName}</h3>
+          <Link href={`/teams/${teamId}`} style={{ margin: 0, fontSize: "1.2rem", color: "inherit", textDecoration: "none" }}>
+            <h3 style={{ margin: 0, fontSize: "1.2rem" }}>{teamName}</h3>
+          </Link>
           <span style={{ marginLeft: "auto", color: "var(--text-muted)", fontSize: "0.85rem" }}>{teamPlayers.length} players</span>
         </div>
 
@@ -144,7 +149,9 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
                       </td>
                       <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>
                         <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          {p.firstName} {p.lastName}
+                          <Link href={`/players/${p.id}`} style={{ color: "inherit", textDecoration: "none" }}>
+                            {p.firstName} {p.lastName}
+                          </Link>
                           {isHero && (
                             <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.7rem", color: "#ffb700", background: "rgba(255,183,0,0.15)", border: "1px solid rgba(255,183,0,0.3)", padding: "2px 8px", borderRadius: "10px", fontWeight: 700 }}>
                               <Award size={10} />
@@ -169,8 +176,8 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
           </div>
         )}
 
-        {!hasStats && match.status === 'COMPLETED' && (
-          <div style={{ padding: "12px 24px", background: "rgba(0,0,0,0.15)", borderTop: "1px solid var(--border-light)", color: "var(--text-muted)", fontSize: "0.85rem", textAlign: "center" }}>
+        {pendingStats && (
+          <div style={{ padding: "12px 24px", background: "rgba(255,183,0,0.08)", borderTop: "1px solid rgba(255,183,0,0.2)", color: "var(--text-muted)", fontSize: "0.85rem", textAlign: "center" }}>
             Stats have not been recorded for this match yet.
           </div>
         )}
@@ -203,7 +210,7 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
     assists: getLeader('assists'),
     steals: getLeader('steals'),
   };
-  const canShareMatch = match.status === "COMPLETED";
+  const canShareMatch = effectiveStatus === "COMPLETED";
 
   return (
     <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "40px 20px" }}>
@@ -220,7 +227,7 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
           awayScore={match.awayScore}
           homeColor={match.homeTeamColor}
           awayColor={match.awayTeamColor}
-          status={match.status}
+          status={effectiveStatus}
           division={null}
           matchDate={match.matchDate.toLocaleDateString()}
           disabled={!canShareMatch}
@@ -232,19 +239,26 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
 
       {/* Scoreboard */}
       <div className="glass-panel scoreboard-header" style={{ padding: "40px", marginBottom: "40px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <span className={`badge ${statusBadgeClass}`} style={{ marginBottom: "20px", ...(match.status === "SCHEDULED" && { background: "var(--surface-hover)", color: "var(--text-secondary)", border: "1px solid var(--border-light)" }) }}>
+        <span className={`badge ${statusBadgeClass}`} style={{ marginBottom: pendingStats ? "12px" : "20px", ...(effectiveStatus === "SCHEDULED" && { background: "var(--surface-hover)", color: "var(--text-secondary)", border: "1px solid var(--border-light)" }) }}>
           {statusLabel}
         </span>
+        {pendingStats && (
+          <span className="badge" style={{ marginBottom: "16px", background: "rgba(255,183,0,0.12)", color: "#b45309", border: "1px solid rgba(255,183,0,0.25)" }}>
+            Pending Stats
+          </span>
+        )}
 
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "40px", width: "100%", maxWidth: "800px" }}>
           <div style={{ flex: 1, textAlign: "center" }}>
             <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: match.homeTeamColor || "var(--surface-hover)", margin: "0 auto 16px auto", border: "3px solid var(--border-light)" }}></div>
-            <h2 style={{ fontSize: "1.8rem", margin: 0 }}>{match.homeTeamName}</h2>
+            <Link href={`/teams/${match.homeTeamId}`} style={{ color: "inherit", textDecoration: "none" }}>
+              <h2 style={{ fontSize: "1.8rem", margin: 0 }}>{match.homeTeamName}</h2>
+            </Link>
             <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "4px" }}>{match.homeTeamShort}</div>
           </div>
 
           <div style={{ textAlign: "center" }} className="scoreboard-middle">
-            {match.status !== "SCHEDULED" ? (
+            {effectiveStatus !== "SCHEDULED" ? (
               <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: "center" }}>
                 <span className="scoreboard-score" style={{ fontSize: "4rem", fontWeight: 900, color: match.homeScore! >= match.awayScore! ? "var(--text-primary)" : "var(--text-muted)" }}>{match.homeScore}</span>
                 <span style={{ fontSize: "2rem", color: "var(--text-muted)" }}>—</span>
@@ -260,7 +274,9 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
 
           <div style={{ flex: 1, textAlign: "center" }}>
             <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: match.awayTeamColor || "var(--surface-hover)", margin: "0 auto 16px auto", border: "3px solid var(--border-light)" }}></div>
-            <h2 style={{ fontSize: "1.8rem", margin: 0 }}>{match.awayTeamName}</h2>
+            <Link href={`/teams/${match.awayTeamId}`} style={{ color: "inherit", textDecoration: "none" }}>
+              <h2 style={{ fontSize: "1.8rem", margin: 0 }}>{match.awayTeamName}</h2>
+            </Link>
             <div style={{ color: "var(--text-muted)", fontSize: "0.85rem", marginTop: "4px" }}>{match.awayTeamShort}</div>
           </div>
         </div>
@@ -275,7 +291,15 @@ export default async function PublicMatchDetailsPage({ params }: { params: Promi
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "2px", color: "#ffb700", marginBottom: "6px" }}>Player of the Game</div>
             <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text-primary)", lineHeight: 1, marginBottom: "4px" }}>
-              {match.potgFirstName} {match.potgLastName}
+              {match.playerOfTheGameId ? (
+                <Link href={`/players/${match.playerOfTheGameId}`} style={{ color: "inherit", textDecoration: "none" }}>
+                  {match.potgFirstName} {match.potgLastName}
+                </Link>
+              ) : (
+                <>
+                  {match.potgFirstName} {match.potgLastName}
+                </>
+              )}
               {match.potgJersey != null && <span style={{ color: "var(--text-muted)", fontWeight: 400, fontSize: "1.2rem", marginLeft: "10px" }}>#{match.potgJersey}</span>}
             </div>
             <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>

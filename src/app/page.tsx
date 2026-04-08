@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { db } from "@/db";
-import { matches, teams, players } from "@/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { matches, teams, players, playerMatchStats } from "@/db/schema";
+import { count, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { Trophy } from 'lucide-react';
 import PublicNav from '@/components/PublicNav';
+import { hasPendingStats, getEffectiveMatchStatus } from '@/lib/match-state';
 
 const validDivisions = ["Kids Camp", "Midgets", "Juniors", "Seniors", "Open Seniors Division"];
 type Division = typeof validDivisions[number];
@@ -47,12 +48,26 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
     ? await baseMatchesQuery.where(eq(homeTeams.division, divisionFilter)).orderBy(desc(matches.matchDate))
     : await baseMatchesQuery.orderBy(desc(matches.matchDate));
 
+  const statsCounts = allMatchesRaw.length > 0
+    ? await db
+        .select({
+          matchId: playerMatchStats.matchId,
+          statCount: count(playerMatchStats.id),
+        })
+        .from(playerMatchStats)
+        .where(inArray(playerMatchStats.matchId, allMatchesRaw.map((match) => match.id)))
+        .groupBy(playerMatchStats.matchId)
+    : [];
+
+  const statsCountMap = new Map(statsCounts.map((row) => [row.matchId, Number(row.statCount)]));
+  const now = new Date();
+
   const upcomingMatches = allMatchesRaw
-    .filter(m => m.status === 'SCHEDULED' || m.status === 'LIVE')
+    .filter((match) => getEffectiveMatchStatus(match.status, match.matchDate, now) === "SCHEDULED" || match.status === "LIVE")
     .sort((a, b) => a.matchDate.getTime() - b.matchDate.getTime());
 
   const completedMatches = allMatchesRaw
-    .filter(m => m.status === 'COMPLETED')
+    .filter((match) => getEffectiveMatchStatus(match.status, match.matchDate, now) === "COMPLETED")
     .sort((a, b) => b.matchDate.getTime() - a.matchDate.getTime());
 
   return (
@@ -138,6 +153,9 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
                   <div style={{ flex: 1, minWidth: '120px' }}>
                     <div style={{ marginBottom: '8px', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                        <span className="badge badge-completed">Final</span>
+                       {hasPendingStats(match.status, match.matchDate, statsCountMap.get(match.id) ?? 0, now) && (
+                         <span className="badge" style={{ background: 'rgba(255,183,0,0.12)', color: '#b45309', border: '1px solid rgba(255,183,0,0.25)' }}>Pending Stats</span>
+                       )}
                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--brand-cyan)', textTransform: 'uppercase', letterSpacing: '1px' }}>{match.division}</span>
                     </div>
                     <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: match.potgFirstName ? '8px' : '0' }}>
@@ -170,7 +188,7 @@ export default async function MatchesPage({ searchParams }: { searchParams: Prom
                   </div>
                   
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }} className="view-detail-link">
-                    Box Score &rarr;
+                    {hasPendingStats(match.status, match.matchDate, statsCountMap.get(match.id) ?? 0, now) ? "Pending Stats" : "Box Score"} &rarr;
                   </div>
               </div>
               </Link>

@@ -231,6 +231,14 @@ select {
   .admin-grid {
     grid-template-columns: 1fr !important;
   }
+
+  .dashboard-overview-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-overview-grid > a {
+    grid-column: auto !important;
+  }
 }
 
 /* Page Specific Styles formerly in styled-jsx */
@@ -324,4 +332,3 @@ select {
     grid-template-columns: 1fr !important;
   }
 }
-

@@ -34,6 +34,7 @@ export default async function LeadersPage({ searchParams }: { searchParams: Prom
   const rawStats = await db
     .select({
       playerId: playerMatchStats.playerId,
+      teamId: teams.id,
       firstName: players.firstName,
       lastName: players.lastName,
       jerseyNumber: players.jerseyNumber,
@@ -57,6 +58,7 @@ export default async function LeadersPage({ searchParams }: { searchParams: Prom
       players.lastName,
       players.jerseyNumber,
       players.position,
+      teams.id,
       teams.name,
       teams.primaryColor,
       teams.division,
@@ -165,7 +167,9 @@ export default async function LeadersPage({ searchParams }: { searchParams: Prom
                               </td>
                               <td style={{ padding: "12px 16px" }}>
                                 <div style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                                  {player.firstName} {player.lastName}
+                                  <Link href={`/players/${player.playerId}`} style={{ color: "inherit", textDecoration: "none" }}>
+                                    {player.firstName} {player.lastName}
+                                  </Link>
                                   {player.jerseyNumber != null && (
                                     <span style={{ color: "var(--text-muted)", fontWeight: 400, marginLeft: "6px", fontSize: "0.8rem" }}>#{player.jerseyNumber}</span>
                                   )}
@@ -177,7 +181,9 @@ export default async function LeadersPage({ searchParams }: { searchParams: Prom
                               <td style={{ padding: "12px 16px" }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                   <div style={{ width: "10px", height: "10px", borderRadius: "50%", background: player.teamColor || "var(--text-muted)", flexShrink: 0 }}></div>
-                                  <span style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{player.teamName}</span>
+                                  <Link href={`/teams/${player.teamId}`} style={{ fontSize: "0.85rem", color: "var(--text-secondary)", textDecoration: "none" }}>
+                                    {player.teamName}
+                                  </Link>
                                 </div>
                               </td>
                               <td style={{ padding: "12px 16px", textAlign: "right" }}>

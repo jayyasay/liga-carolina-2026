@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import ScoreController from "./ScoreController";
 import BoxScoreManager from "./BoxScoreManager";
 import PlayerOfTheGameSelector from "./PlayerOfTheGameSelector";
+import ScheduledMatchEditor from "./ScheduledMatchEditor";
 import { requireAdminSession } from "@/lib/admin-auth";
 
 export default async function MatchDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -22,7 +23,6 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
     .select({
       id: matches.id,
       matchDate: matches.matchDate,
-      venue: matches.venue,
       status: matches.status,
       homeScore: matches.homeScore,
       awayScore: matches.awayScore,
@@ -93,7 +93,7 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
                 <span style={{ color: matchData.awayScore! > matchData.homeScore! ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{matchData.awayScore}</span>
             </div>
             <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                {matchData.matchDate.toLocaleDateString()} &middot; {matchData.venue || "TBD"}
+                {matchData.matchDate.toLocaleDateString()} &middot; {matchData.matchDate.toLocaleTimeString([], { timeStyle: "short" })}
             </div>
          </div>
 
@@ -102,6 +102,10 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ i
             <h2 style={{ margin: 0, fontSize: '1.5rem', color: 'var(--text-primary)' }}>{matchData.awayTeamName}</h2>
          </div>
        </div>
+
+       {matchData.status === "SCHEDULED" && (
+        <ScheduledMatchEditor matchId={matchId} initialMatchDateIso={matchData.matchDate.toISOString()} />
+       )}
 
        {/* Score Controls */}
        <ScoreController 

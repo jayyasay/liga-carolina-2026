@@ -43,11 +43,11 @@ export default function MatchStatsUploader({ matchId, homeTeamId, awayTeamId }: 
       <div style={{ marginBottom: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
           <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>CSV Data Payload</label>
-          <span style={{ color: 'var(--brand-primary)', fontSize: '0.85rem' }}>Format: Name, PTS, REB, AST, BLK, STL, FG%</span>
+          <span style={{ color: 'var(--brand-primary)', fontSize: '0.85rem' }}>Format: Name, PTS, REB, AST, BLK, STL (BLK/STL optional)</span>
         </div>
         <textarea
           rows={8}
-          placeholder={"Name, PTS, REB, AST, BLK, STL, FG%\nLeBron James, 28, 8, 11, 1, 2, 0.54\nAnthony Davis, 24, 14, 3, 4, 1, 0.60"}
+          placeholder={"Name, PTS, REB, AST, BLK, STL\nLeBron James, 28, 8, 11, 1, 2\nAnthony Davis, 24, 14, 3, 4, 1"}
           value={csvData}
           onChange={(e) => setCsvData(e.target.value)}
           style={{ width: '100%', padding: '16px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.3)', color: 'white', fontFamily: 'monospace', fontSize: '0.9rem', resize: 'vertical' }}

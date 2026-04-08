@@ -18,6 +18,8 @@ export default async function TeamDetailsPage({ params }: { params: Promise<{ id
   if (!team) notFound();
 
   const roster = await db.select().from(players).where(eq(players.teamId, teamId));
+  const teamShortLabel = team.shortName?.trim() || "—";
+  const teamBadge = team.shortName?.trim() || team.name.slice(0, 3).toUpperCase();
 
   return (
     <div style={{ maxWidth: "900px", paddingBottom: "60px" }}>
@@ -30,13 +32,13 @@ export default async function TeamDetailsPage({ params }: { params: Promise<{ id
       {/* Team Header */}
       <div className="glass-panel" style={{ padding: "40px", marginBottom: "40px", display: "flex", alignItems: "center", gap: "30px", borderTop: `4px solid ${team.primaryColor || "var(--brand-primary)"}` }}>
         <div style={{ fontSize: "3rem", background: "var(--surface-hover)", width: "100px", height: "100px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", border: `4px solid ${team.primaryColor || "var(--brand-primary)"}` }}>
-          {team.shortName.charAt(0)}
+          {teamBadge.charAt(0)}
         </div>
         <div>
           <h1 style={{ fontSize: "2.5rem", margin: "0 0 8px 0", display: "flex", alignItems: "center", gap: "16px" }}>
             {team.name}
             <span style={{ fontSize: "1.1rem", padding: "4px 12px", background: "var(--surface-hover)", borderRadius: "var(--border-radius-sm)", color: "var(--text-muted)" }}>
-              {team.shortName}
+              {teamShortLabel}
             </span>
           </h1>
           <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
@@ -48,7 +50,7 @@ export default async function TeamDetailsPage({ params }: { params: Promise<{ id
 
       {/* Interactive Manager */}
       <TeamDetailManager
-        team={{ id: team.id, name: team.name, shortName: team.shortName, primaryColor: team.primaryColor, division: team.division || "Open Seniors Division" }}
+        team={{ id: team.id, name: team.name, shortName: team.shortName || "", primaryColor: team.primaryColor, division: team.division || "Open Seniors Division" }}
         roster={roster.map(p => ({ id: p.id, firstName: p.firstName, lastName: p.lastName, jerseyNumber: p.jerseyNumber, position: p.position }))}
       />
     </div>

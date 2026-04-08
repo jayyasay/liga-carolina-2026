@@ -23,7 +23,7 @@ export async function uploadMatchStats(matchId: string, homeTeamId: string, away
     // Header check
     const header = lines[0].toLowerCase();
     if (!header.includes("name") || !header.includes("pts") || !header.includes("reb") || !header.includes("ast")) {
-      return { success: false, error: "Invalid CSV format. Must include headers: Name, PTS, REB, AST" };
+      return { success: false, error: "Invalid CSV format. Must include headers like: Name, PTS, REB, AST, BLK, STL" };
     }
 
     const insertData = [];

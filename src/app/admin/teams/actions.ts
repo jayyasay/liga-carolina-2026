@@ -29,7 +29,7 @@ export async function bulkCreateTeamsWithRoster(rawText: string) {
       if (parts.length < 5) continue; // Need at least: Team, Short, Color, First, Last
 
       const teamName = parts[0];
-      const shortName = parts[1];
+      const shortName = parts[1] || "";
       const color = parts[2];
 
       // Auto-detect whether the user included a Division column:
@@ -65,7 +65,7 @@ export async function bulkCreateTeamsWithRoster(rawText: string) {
         position = posUpper as Position;
       }
 
-      if (!teamName || !firstName || !lastName || !shortName) continue;
+      if (!teamName || !firstName || !lastName) continue;
 
       if (!teamMap[teamName]) {
         teamMap[teamName] = { shortName, color: color || "#000000", division, players: [] };
@@ -87,7 +87,7 @@ export async function bulkCreateTeamsWithRoster(rawText: string) {
     // 1. Insert Teams & capture their new UUIDs
     const teamInserts = teamNamesToInsert.map(name => ({
       name,
-      shortName: teamMap[name].shortName,
+      shortName: teamMap[name].shortName || "",
       primaryColor: teamMap[name].color,
       division: teamMap[name].division
     }));
@@ -135,7 +135,7 @@ export async function createTeam(formData: FormData) {
     await requireAdminSession();
 
     const name = formData.get("name")?.toString();
-    const shortName = formData.get("shortName")?.toString();
+    const shortName = formData.get("shortName")?.toString().trim() || "";
     const primaryColor = formData.get("primaryColor")?.toString() || "#000000";
     const divStr = formData.get("division")?.toString();
     
@@ -144,8 +144,8 @@ export async function createTeam(formData: FormData) {
         division = divStr as Division;
     }
 
-    if (!name || !shortName) {
-      return { success: false, error: "Name and Short Name are required." };
+    if (!name) {
+      return { success: false, error: "Team name is required." };
     }
 
     await db.insert(teams).values({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Share, Loader2, Trophy } from "lucide-react";
 
 type MatchShareProps = {
@@ -27,9 +27,18 @@ type MatchShareProps = {
 export default function MatchShareButton(props: MatchShareProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [shareMode, setShareMode] = useState<"mobile" | "desktop">("desktop");
 
   const isCompleted = props.status === "COMPLETED";
   const isDisabled = props.disabled ?? !isCompleted;
+
+  useEffect(() => {
+    const isMobile =
+      window.matchMedia("(pointer: coarse)").matches ||
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    setShareMode(isMobile ? "mobile" : "desktop");
+  }, []);
 
   const handleShare = async () => {
     if (isDisabled || isCapturing || !cardRef.current) return;
@@ -45,11 +54,43 @@ export default function MatchShareButton(props: MatchShareProps) {
         logging: false,
       });
 
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(result => {
+          if (result) resolve(result);
+          else reject(new Error("Unable to generate share image."));
+        }, "image/png");
+      });
+
+      const shareTitle = `${props.homeTeam} vs ${props.awayTeam}`;
+      const shareText = `Liga Carolina match card for ${shareTitle}.`;
+      const fileName = `liga-match-${props.homeTeam.replace(/\s+/g, "-")}-vs-${props.awayTeam.replace(/\s+/g, "-")}.png`;
+
+      if (shareMode === "mobile" && typeof navigator !== "undefined" && typeof navigator.share === "function") {
+        const file = new File([blob], fileName, { type: "image/png" });
+
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: shareTitle,
+            text: shareText,
+          });
+          return;
+        }
+
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+        });
+        return;
+      }
+
       // Download
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.download = `liga-match-${props.homeTeam.replace(/\s+/g, "-")}-vs-${props.awayTeam.replace(/\s+/g, "-")}.png`;
-      link.href = canvas.toDataURL("image/png");
+      link.download = fileName;
+      link.href = url;
       link.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Share capture failed:", err);
     } finally {
@@ -80,10 +121,16 @@ export default function MatchShareButton(props: MatchShareProps) {
             alignSelf: "flex-end",
           }}
           aria-disabled={isDisabled}
-          title={isDisabled ? "Share Match is available only after the match is completed." : "Download a shareable match image."}
-        >
+          title={
+            isDisabled
+              ? "Share Match is available only after the match is completed."
+              : shareMode === "mobile"
+              ? "Open your device's native share sheet."
+              : "Save a shareable match image."
+          }
+          >
           {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <Share size={16} />}
-          {isCapturing ? "Generating..." : isDisabled ? "Share Unavailable" : "Share Match"}
+          {isCapturing ? "Generating..." : isDisabled ? "Share Unavailable" : shareMode === "mobile" ? "Share Match" : "Save Match"}
         </button>
         {isDisabled && (
           <div style={{ marginTop: "0px", fontSize: "0.8rem", color: "var(--text-muted)", textAlign: "right" }}>
